@@ -1,0 +1,120 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Master Gate helper: Get owner of a tuition
+    function getTuitionOwner(tuitionId) {
+      return get(/databases/$(database)/documents/tuitions/$(tuitionId)).data.userId;
+    }
+
+    // Default catch-all denies all operations
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Users Collection rules
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId)
+        && request.resource.data.keys().hasAll(['id', 'fullName', 'email', 'createdAt'])
+        && request.resource.data.id == userId
+        && request.resource.data.fullName is string
+        && request.resource.data.fullName.size() <= 100
+        && request.resource.data.email is string
+        && request.resource.data.email.size() <= 100;
+      allow update: if isOwner(userId)
+        && request.resource.data.id == userId
+        && request.resource.data.fullName is string
+        && request.resource.data.fullName.size() <= 100
+        && request.resource.data.email == resource.data.email; // Email is immutable
+      allow delete: if false; // Tutors cannot delete accounts via client
+    }
+
+    // Tuitions Collection rules
+    match /tuitions/{tuitionId} {
+      allow list, get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.keys().hasAll(['id', 'userId', 'type', 'tuitionName', 'startTime', 'endTime', 'monthlyFee', 'activeDays'])
+        && request.resource.data.tuitionName is string
+        && request.resource.data.tuitionName.size() <= 100
+        && (request.resource.data.type == 'group' || request.resource.data.type == 'single')
+        && request.resource.data.monthlyFee is number
+        && request.resource.data.monthlyFee >= 0;
+      allow update: if isSignedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.tuitionName is string
+        && request.resource.data.tuitionName.size() <= 100
+        && request.resource.data.monthlyFee is number
+        && request.resource.data.monthlyFee >= 0;
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // Students Collection rules
+    match /students/{studentId} {
+      allow list, get: if isSignedIn() && getTuitionOwner(resource.data.tuitionId) == request.auth.uid;
+      allow create: if isSignedIn()
+        && getTuitionOwner(request.resource.data.tuitionId) == request.auth.uid
+        && request.resource.data.keys().hasAll(['id', 'tuitionId', 'studentName', 'guardianPhone'])
+        && request.resource.data.studentName is string
+        && request.resource.data.studentName.size() <= 100;
+      allow update: if isSignedIn()
+        && getTuitionOwner(resource.data.tuitionId) == request.auth.uid
+        && getTuitionOwner(request.resource.data.tuitionId) == request.auth.uid
+        && request.resource.data.studentName is string
+        && request.resource.data.studentName.size() <= 100;
+      allow delete: if isSignedIn() && getTuitionOwner(resource.data.tuitionId) == request.auth.uid;
+    }
+
+    // Session Logs rules
+    match /session_logs/{logId} {
+      allow list, get: if isSignedIn() && (resource.data.userId == request.auth.uid || getTuitionOwner(resource.data.tuitionId) == request.auth.uid);
+      allow create: if isSignedIn()
+        && (request.resource.data.userId == request.auth.uid || getTuitionOwner(request.resource.data.tuitionId) == request.auth.uid)
+        && request.resource.data.keys().hasAll(['id', 'tuitionId', 'date', 'status', 'createdAt'])
+        && (request.resource.data.status == 'completed' || request.resource.data.status == 'cancelled');
+      allow update: if isSignedIn()
+        && (resource.data.userId == request.auth.uid || getTuitionOwner(resource.data.tuitionId) == request.auth.uid)
+        && (request.resource.data.status == 'completed' || request.resource.data.status == 'cancelled');
+      allow delete: if isSignedIn() && (resource.data.userId == request.auth.uid || getTuitionOwner(resource.data.tuitionId) == request.auth.uid);
+    }
+
+    // Session Adjustments rules
+    match /session_adjustments/{adjustmentId} {
+      allow list, get: if isSignedIn() && (resource.data.userId == request.auth.uid || getTuitionOwner(resource.data.tuitionId) == request.auth.uid);
+      allow create: if isSignedIn()
+        && (request.resource.data.userId == request.auth.uid || getTuitionOwner(request.resource.data.tuitionId) == request.auth.uid)
+        && request.resource.data.keys().hasAll(['id', 'tuitionId', 'sessionDate', 'adjustedDate', 'adjustedStartTime', 'adjustedEndTime', 'usedAdjustment']);
+      allow update: if isSignedIn()
+        && (resource.data.userId == request.auth.uid || getTuitionOwner(resource.data.tuitionId) == request.auth.uid)
+        && request.resource.data.tuitionId == resource.data.tuitionId;
+      allow delete: if isSignedIn() && (resource.data.userId == request.auth.uid || getTuitionOwner(resource.data.tuitionId) == request.auth.uid);
+    }
+
+    // Payments rules
+    match /payments/{paymentId} {
+      allow list, get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.keys().hasAll(['id', 'tuitionId', 'userId', 'studentId', 'studentName', 'amount', 'paymentMonth', 'status']);
+      allow update: if isSignedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Tuition Diary",
+  "description": "A modern tuition management web application for private teachers to manage schedules, tuition batches, students, attendance, class adjustments, and monthly fee collection.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

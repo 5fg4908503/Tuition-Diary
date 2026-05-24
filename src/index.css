@@ -1,0 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  
+  --color-brand-bg-card: #FFF7EE;
+  --color-brand-bg-input: #FFF7EE;
+  --color-brand-bg-main: #F6F7F9;
+  --color-brand-bg-selected: #EEF2FF;
+  
+  --color-badge-group-bg: #E0ECFF;
+  --color-badge-group-text: #2563EB;
+  --color-badge-single-bg: #E6F8EF;
+  --color-badge-single-text: #15803D;
+  
+  --color-badge-due-bg: #FEE2E2;
+  --color-badge-due-text: #DC2626;
+  --color-badge-paid-bg: #DCFCE7;
+  --color-badge-paid-text: #16A34A;
+}
+
+body {
+  background-color: #F6F7F9;
+  color: #1F2937;
+  font-family: var(--font-sans);
+}
+
+/* Custom scrollbars for nice touch experience */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #E5E7EB;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #D1D5DB;
+}

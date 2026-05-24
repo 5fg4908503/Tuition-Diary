@@ -1,0 +1,131 @@
+{
+  "entities": {
+    "user": {
+      "title": "User",
+      "description": "Information about the registered tutor user",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "User ID" },
+        "fullName": { "type": "string", "description": "Tutor's official name" },
+        "phone": { "type": "string", "description": "Tutor's phone number" },
+        "email": { "type": "string", "description": "Tutor's email address" },
+        "authProvider": { "type": "string", "description": "Authentication provider type" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Account creation timestamp" }
+      },
+      "required": ["id", "fullName", "email"]
+    },
+    "tuition": {
+      "title": "Tuition",
+      "description": "Tuition batch or private single student details",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique tuition ID" },
+        "userId": { "type": "string", "description": "ID of the teacher" },
+        "type": { "type": "string", "enum": ["group", "single"], "description": "Whether it's a group batch or single student" },
+        "tuitionName": { "type": "string", "description": "Name of the tuition batch or student" },
+        "startTime": { "type": "string", "description": "Class start time (e.g. 10:00 AM)" },
+        "endTime": { "type": "string", "description": "Class end time (e.g. 11:00 AM)" },
+        "monthlyFee": { "type": "number", "description": "Monthly fee per student" },
+        "activeDays": { "type": "array", "description": "Array of day indices (0 to 6)" },
+        "primaryPhone": { "type": "string", "description": "Primary phone number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "type", "tuitionName", "startTime", "endTime", "monthlyFee", "activeDays"]
+    },
+    "student": {
+      "title": "Student",
+      "description": "Student details mapping to a tuition batch",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "tuitionId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "guardianPhone": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "tuitionId", "studentName", "guardianPhone"]
+    },
+    "session_log": {
+      "title": "SessionLog",
+      "description": "Completed or cancelled records of a specific tuition class",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "tuitionId": { "type": "string" },
+        "userId": { "type": "string", "description": "Teacher ID" },
+        "date": { "type": "string", "description": "YYYY-MM-DD" },
+        "originalStartTime": { "type": "string" },
+        "originalEndTime": { "type": "string" },
+        "actualStartTime": { "type": "string" },
+        "actualEndTime": { "type": "string" },
+        "status": { "type": "string", "enum": ["completed", "cancelled"] },
+        "note": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "tuitionId", "date", "status", "createdAt"]
+    },
+    "session_adjustment": {
+      "title": "SessionAdjustment",
+      "description": "Date/time adjustment for a scheduled tuition session",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "tuitionId": { "type": "string" },
+        "userId": { "type": "string", "description": "Teacher ID" },
+        "sessionDate": { "type": "string", "description": "Original session date in YYYY-MM-DD" },
+        "adjustedDate": { "type": "string", "description": "Adjusted class date in YYYY-MM-DD" },
+        "adjustedStartTime": { "type": "string" },
+        "adjustedEndTime": { "type": "string" },
+        "note": { "type": "string" },
+        "usedAdjustment": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "tuitionId", "sessionDate", "adjustedDate", "adjustedStartTime", "adjustedEndTime", "usedAdjustment"]
+    },
+    "payment": {
+      "title": "Payment",
+      "description": "Payment records for student tuition fees",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "tuitionId": { "type": "string" },
+        "userId": { "type": "string" },
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "amount": { "type": "number" },
+        "paymentMonth": { "type": "string", "description": "YYYY-MM" },
+        "paymentDate": { "type": "string", "description": "YYYY-MM-DD" },
+        "status": { "type": "string", "enum": ["paid", "unpaid", "overdue"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "tuitionId", "userId", "studentId", "amount", "paymentMonth", "status"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "user",
+      "description": "Registered tutors profile info"
+    },
+    "tuitions/{tuitionId}": {
+      "schema": "tuition",
+      "description": "Main tuition entry, belongs to a teacher"
+    },
+    "students/{studentId}": {
+      "schema": "student",
+      "description": "Individual student rows"
+    },
+    "session_logs/{logId}": {
+      "schema": "session_log",
+      "description": "Records of held or cancelled classes"
+    },
+    "session_adjustments/{adjustmentId}": {
+      "schema": "session_adjustment",
+      "description": "Adjustments applied to a single class"
+    },
+    "payments/{paymentId}": {
+      "schema": "payment",
+      "description": "Fees and payment collection receipts"
+    }
+  }
+}
